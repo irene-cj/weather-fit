@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Weather &amp; Fit</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="{% if weather %}has-results{% endif %}">
+
+  <div class="noise-overlay"></div>
+  <div class="bg-glow glow-1"></div>
+  <div class="bg-glow glow-2"></div>
+
+  <main class="container">
+
+    <!-- HERO / SEARCH -->
+    <section class="hero {% if weather %}shifted{% endif %}">
+
+      <div class="logo-mark">
+        <svg width="60" height="60" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="44" cy="14" r="10" fill="#EF233C"/>
+          <path d="M20 28C20 21.373 25.373 16 32 16C36.418 16 40.284 18.354 42.42 21.9C43.237 21.633 44.103 21.5 45 21.5C50.247 21.5 54.5 25.753 54.5 31C54.5 36.247 50.247 40.5 45 40.5H20C14.477 40.5 10 36.023 10 30.5C10 24.977 14.477 20.5 20 20.5Z" fill="#C9FFE2" opacity="0.9"/>
+          <line x1="24" y1="46" x2="22" y2="56" stroke="#0197F6" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="32" y1="46" x2="30" y2="56" stroke="#0197F6" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="40" y1="46" x2="38" y2="56" stroke="#0197F6" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <h1 class="brand-title">
+        <span class="word-weather">WEATHER</span>
+        <span class="row-fit"><span class="word-and">&amp;</span><span class="word-fit">FIT</span></span>
+      </h1>
+      <p class="brand-tagline">CHECK THE FORECAST, STAY FRESH</p>
+      <div class="divider"></div>
+
+      <form method="POST" action="/" class="search-form" id="mainForm">
+        <div class="search-wrapper">
+          <input type="text" name="city" class="search-input" placeholder="FIND YOUR CITY"
+            autocomplete="off" value="{{ request.form.get('city','') }}"/>
+          <button type="submit" class="search-btn" aria-label="Search">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </button>
+        </div>
+      </form>
+
+      {% if error %}<div class="error-msg">⚠ {{ error }}</div>{% endif %}
+      <p class="footer-tag">EST. 2026 &bull; GLOBAL COVERAGE</p>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ RESULTS -->
+    {% if weather %}
+    <section class="results animate-in">
+
+      <!-- UNIT TOGGLE -->
+      <div class="unit-toggle-row">
+        <span class="toggle-label">UNITS</span>
+        <div class="unit-toggle" id="unitToggle">
+          <button class="unit-btn active" id="btnF" onclick="setUnit('F')">°F</button>
+          <button class="unit-btn" id="btnC" onclick="setUnit('C')">°C</button>
+        </div>
+      </div>
+
+      <!-- CURRENT WEATHER CARD -->
+      <div class="weather-card">
+        <div class="weather-card-top">
+          <div class="city-info">
+            <h2 class="city-name">{{ weather.city }}, <span class="country">{{ weather.country }}</span></h2>
+            <p class="condition-text">{{ weather.condition }}</p>
+          </div>
+          <div class="temp-block">
+            <img src="{{ weather.icon_url }}" alt="{{ weather.condition }}" class="weather-icon"/>
+            <div class="temp-main">
+              <span class="val-f">{{ weather.temp_f }}</span>
+              <span class="val-c" style="display:none">{{ weather.temp_c }}</span>
+              <span class="deg">°<span class="unit-label">F</span></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="weather-stats">
+          <div class="stat">
+            <span class="stat-icon">🌡</span>
+            <span class="stat-label">FEELS LIKE</span>
+            <span class="stat-value">
+              <span class="val-f">{{ weather.feels_f }}</span><span class="val-c" style="display:none">{{ weather.feels_c }}</span>°<span class="unit-label">F</span>
+            </span>
+          </div>
+          <div class="stat">
+            <span class="stat-icon">💧</span>
+            <span class="stat-label">HUMIDITY</span>
+            <span class="stat-value">{{ weather.humidity }}%</span>
+          </div>
+          <div class="stat">
+            <span class="stat-icon">💨</span>
+            <span class="stat-label">WIND</span>
+            <span class="stat-value">
+              <span class="val-f">{{ weather.wind_mph }} mph</span>
+              <span class="val-c" style="display:none">{{ weather.wind_kph }} kph</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- HOURLY TEMP CHART -->
+      {% if hourly %}
+      <div class="card chart-card">
+        <h3 class="card-title">TODAY'S TEMPERATURE</h3>
+        <div class="chart-wrapper">
+          <canvas id="hourlyChart"></canvas>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- 5-DAY FORECAST -->
+      {% if forecast %}
+      <div class="card forecast-card">
+        <h3 class="card-title">5-DAY FORECAST</h3>
+        <div class="forecast-row">
+          {% for day in forecast %}
+          <div class="forecast-day">
+            <span class="fc-label">{{ day.label }}</span>
+            <span class="fc-date">{{ day.date }}</span>
+            <img src="{{ day.icon_url }}" alt="{{ day.condition }}" class="fc-icon"/>
+            <span class="fc-high">
+              <span class="val-f">{{ day.high_f }}</span><span class="val-c" style="display:none">{{ day.high_c }}</span>°<span class="unit-label">F</span>
+            </span>
+            <span class="fc-low">
+              <span class="val-f">{{ day.low_f }}</span><span class="val-c" style="display:none">{{ day.low_c }}</span>°<span class="unit-label">F</span>
+            </span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- AIR QUALITY -->
+      {% if air %}
+      <div class="card aqi-card">
+        <h3 class="card-title">AIR QUALITY</h3>
+        <div class="aqi-main">
+          <div class="aqi-badge" style="background: {{ air.color }}22; border-color: {{ air.color }}66;">
+            <span class="aqi-number" style="color: {{ air.color }}">{{ air.aqi }}</span>
+            <span class="aqi-label" style="color: {{ air.color }}">{{ air.label }}</span>
+          </div>
+          <p class="aqi-desc">{{ air.desc }}</p>
+        </div>
+        <div class="aqi-stats">
+          <div class="aqi-stat"><span class="aqi-stat-label">PM2.5</span><span class="aqi-stat-val">{{ air.pm25 }}</span></div>
+          <div class="aqi-stat"><span class="aqi-stat-label">PM10</span><span class="aqi-stat-val">{{ air.pm10 }}</span></div>
+          <div class="aqi-stat"><span class="aqi-stat-label">O₃</span><span class="aqi-stat-val">{{ air.o3 }}</span></div>
+          <div class="aqi-stat"><span class="aqi-stat-label">NO₂</span><span class="aqi-stat-val">{{ air.no2 }}</span></div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- OUTFIT RECOMMENDATION -->
+      {% if outfit %}
+      <div class="outfit-card">
+        <div class="outfit-header">
+          <span class="outfit-emoji">{{ outfit.emoji }}</span>
+          <div>
+            <h3 class="outfit-title">TODAY'S FIT</h3>
+            <p class="outfit-summary">{{ outfit.summary }}</p>
+          </div>
+        </div>
+        <ul class="outfit-list">
+          {% for item in outfit.clothing %}
+          <li class="outfit-item">
+            <span class="outfit-bullet"></span>{{ item }}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      <!-- OUTFIT PICKER -->
+      <div class="card picker-card">
+        <h3 class="card-title">OUTFIT PICKER</h3>
+        <p class="picker-desc">Enter up to 3 outfits and we'll tell you which one suits the weather.</p>
+        <form method="POST" action="/" class="picker-form">
+          <input type="hidden" name="city" value="{{ weather.city }}"/>
+          <div class="picker-inputs">
+            <div class="picker-field">
+              <label class="picker-label">OUTFIT 1</label>
+              <input type="text" name="outfit1" class="picker-input"
+                placeholder="e.g. crocs, shorts, hoodie"
+                value="{{ request.form.get('outfit1','') }}"/>
+            </div>
+            <div class="picker-field">
+              <label class="picker-label">OUTFIT 2</label>
+              <input type="text" name="outfit2" class="picker-input"
+                placeholder="e.g. boots, jeans, winter coat"
+                value="{{ request.form.get('outfit2','') }}"/>
+            </div>
+            <div class="picker-field">
+              <label class="picker-label">OUTFIT 3 <span class="optional">(optional)</span></label>
+              <input type="text" name="outfit3" class="picker-input"
+                placeholder="e.g. sneakers, chinos, t-shirt"
+                value="{{ request.form.get('outfit3','') }}"/>
+            </div>
+          </div>
+          <button type="submit" class="picker-btn">PICK MY OUTFIT →</button>
+        </form>
+
+        {% if outfit_pick %}
+        <div class="pick-result animate-in">
+          <div class="pick-winner-label">GO WITH OUTFIT {{ outfit_pick.winner_index }}</div>
+          <p class="pick-winner-text">{{ outfit_pick.winner_text }}</p>
+          <p class="pick-reason">{{ outfit_pick.reason }}</p>
+        </div>
+        {% endif %}
+      </div>
+
+    </section>
+    {% endif %}
+
+  </main>
+
+  <!-- Chart.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+  {% if hourly %}
+  <script>
+    const hourlyF = {{ hourly | map(attribute='temp_f') | list | tojson }};
+    const hourlyC = {{ hourly | map(attribute='temp_c') | list | tojson }};
+    const hourlyLabels = {{ hourly | map(attribute='hour') | list | tojson }};
+    initChart(hourlyLabels, hourlyF, hourlyC);
+  </script>
+  {% endif %}
+
+</body>
+</html>
