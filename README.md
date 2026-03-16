@@ -1,7 +1,7 @@
 # 🌤️ Weather & Fit
-Live at:energetic-serenity-production.up.railway.app
-A full-stack weather app that gives you real-time weather data and outfit recommendations based on current conditions.
 
+A full-stack weather app that gives you real-time weather data and outfit recommendations based on current conditions.
+🌐 **Live Demo:** [Weather & Fit](https://energetic-serenity-production.up.railway.app/)
 ![Python](https://img.shields.io/badge/Python-3.11-blue?style=flat-square&logo=python)
 ![Flask](https://img.shields.io/badge/Flask-3.x-black?style=flat-square&logo=flask)
 ![MySQL](https://img.shields.io/badge/MySQL-9.x-orange?style=flat-square&logo=mysql)
